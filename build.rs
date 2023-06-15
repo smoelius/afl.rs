@@ -58,11 +58,11 @@ fn build_afl(work_dir: &Path, base: Option<&Path>) {
     let mut command = Command::new("make");
     command
         .current_dir(work_dir)
-        .args(["clean", "all", "install"])
+        //.args(["clean", "all", "install"])
         // skip the checks for the legacy x86 afl-gcc compiler
         .env("AFL_NO_X86", "1")
         // build just the runtime to avoid troubles with Xcode clang on macOS
-        .env("NO_BUILD", "1")
+        //.env("NO_BUILD", "1")
         .env("DESTDIR", common::afl_dir(base))
         .env("PREFIX", "")
         .env_remove("DEBUG");
@@ -76,6 +76,16 @@ fn build_afl_llvm_runtime(work_dir: &Path, base: Option<&Path>) {
         common::object_file_path(base),
     )
     .expect("Couldn't copy object file");
+
+    let shared_libraries = ["afl-llvm-dict2file.so",  "afl-llvm-pass.so",  "cmplog-instructions-pass.so",  "cmplog-routines-pass.so",  "cmplog-switches-pass.so",  "compare-transform-pass.so",  "SanitizerCoveragePCGUARD.so",  "split-compares-pass.so",  "split-switches-pass.so"];
+
+    for sl in shared_libraries {
+      std::fs::copy(
+          work_dir.join(sl),
+          common::afl_llvm_dir(base).join(sl),
+      )
+      .expect(&format!("Couldn't copy shared object file {}", sl));
+    };
 
     let status = Command::new(AR_CMD)
         .arg("r")

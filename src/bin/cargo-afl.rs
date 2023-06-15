@@ -271,6 +271,10 @@ where
 
     // `-C codegen-units=1` is needed to work around link errors
     // https://github.com/rust-fuzz/afl.rs/pull/193#issuecomment-933550430
+
+    let binding = common::afl_llvm_dir(None);
+    let p = binding.display();
+
     let mut rustflags = format!(
         "-C debug-assertions \
          -C overflow_checks \
@@ -280,6 +284,13 @@ where
          -C llvm-args=-sanitizer-coverage-trace-pc-guard \
          -C llvm-args=-sanitizer-coverage-prune-blocks=0 \
          -C llvm-args=-sanitizer-coverage-trace-compares \
+         -Z llvm-plugins={p}/afl-llvm-pass.so \
+         -Z llvm-plugins={p}/cmplog-instructions-pass.so  \
+         -Z llvm-plugins={p}/cmplog-routines-pass.so \
+         -Z llvm-plugins={p}/cmplog-switches-pass.so \
+         -Z llvm-plugins={p}/compare-transform-pass.so \
+         -Z llvm-plugins={p}/split-compares-pass.so \
+         -Z llvm-plugins={p}/split-switches-pass.so \
          -C opt-level=3 \
          -C target-cpu=native "
     );
@@ -303,7 +314,7 @@ where
     rustflags.push_str(&format!(
         "-l afl-llvm-rt \
          -L {} ",
-        common::afl_llvm_rt_dir(None).display()
+        common::afl_llvm_dir(None).display()
     ));
 
     // add user provided flags
@@ -317,6 +328,7 @@ where
         .env("RUSTDOCFLAGS", &rustdocflags)
         .env("ASAN_OPTIONS", asan_options)
         .env("TSAN_OPTIONS", tsan_options)
+        .env("AFL_LLVM_CMPLOG", "1")
         .status()
         .unwrap();
     process::exit(status.code().unwrap_or(1));
