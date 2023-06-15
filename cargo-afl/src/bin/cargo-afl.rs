@@ -317,6 +317,7 @@ where
          -Z llvm-plugins={p}/compare-transform-pass.so \
          -Z llvm-plugins={p}/split-compares-pass.so \
          -Z llvm-plugins={p}/split-switches-pass.so \
+         -Z llvm-plugins={p}/SanitizerCoveragePCGUARD.so \
          -C opt-level=3 \
          -C target-cpu=native "
     );
