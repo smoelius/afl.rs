@@ -58,7 +58,7 @@ fn build_afl(work_dir: &Path, base: Option<&Path>) {
     let mut command = Command::new("make");
     command
         .current_dir(work_dir)
-        //.args(["clean", "all", "install"])
+        .args(["install"])
         // skip the checks for the legacy x86 afl-gcc compiler
         .env("AFL_NO_X86", "1")
         // build just the runtime to avoid troubles with Xcode clang on macOS
