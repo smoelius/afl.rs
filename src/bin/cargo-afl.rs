@@ -275,22 +275,21 @@ where
     let binding = common::afl_llvm_dir(None);
     let p = binding.display();
 
+    /*
+           // either these or cmplog-* + SanitizerCoveragePCGUARD, not both!
+           -C llvm-args=-sanitizer-coverage-level=3 \
+           -C llvm-args=-sanitizer-coverage-trace-pc-guard \
+           -C llvm-args=-sanitizer-coverage-prune-blocks=0 \
+           -C llvm-args=-sanitizer-coverage-trace-compares \
+    */
     let mut rustflags = format!(
         "-C debug-assertions \
          -C overflow_checks \
          -C passes={passes} \
          -C codegen-units=1 \
-         -C llvm-args=-sanitizer-coverage-level=3 \
-         -C llvm-args=-sanitizer-coverage-trace-pc-guard \
-         -C llvm-args=-sanitizer-coverage-prune-blocks=0 \
-         -C llvm-args=-sanitizer-coverage-trace-compares \
-         -Z llvm-plugins={p}/afl-llvm-pass.so \
          -Z llvm-plugins={p}/cmplog-instructions-pass.so  \
          -Z llvm-plugins={p}/cmplog-routines-pass.so \
          -Z llvm-plugins={p}/cmplog-switches-pass.so \
-         -Z llvm-plugins={p}/compare-transform-pass.so \
-         -Z llvm-plugins={p}/split-compares-pass.so \
-         -Z llvm-plugins={p}/split-switches-pass.so \
          -Z llvm-plugins={p}/SanitizerCoveragePCGUARD.so \
          -C opt-level=3 \
          -C target-cpu=native "
@@ -329,6 +328,7 @@ where
         .env("RUSTDOCFLAGS", &rustdocflags)
         .env("ASAN_OPTIONS", asan_options)
         .env("TSAN_OPTIONS", tsan_options)
+        .env("AFL_LLVM_INSTRUMENT", "PCGUARD")
         .env("AFL_LLVM_CMPLOG", "1")
         .status()
         .unwrap();
