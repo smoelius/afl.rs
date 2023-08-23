@@ -85,15 +85,22 @@ fn build_afl_llvm_runtime(work_dir: &Path, base: Option<&Path>) {
     )
     .expect("Couldn't copy object file");
 
-    let shared_libraries = ["afl-llvm-dict2file.so",  "afl-llvm-pass.so",  "cmplog-instructions-pass.so",  "cmplog-routines-pass.so",  "cmplog-switches-pass.so",  "compare-transform-pass.so",  "split-compares-pass.so",  "split-switches-pass.so", "SanitizerCoveragePCGUARD.so"];
+    let shared_libraries = [
+        "afl-llvm-dict2file.so",
+        "afl-llvm-pass.so",
+        "cmplog-instructions-pass.so",
+        "cmplog-routines-pass.so",
+        "cmplog-switches-pass.so",
+        "compare-transform-pass.so",
+        "split-compares-pass.so",
+        "split-switches-pass.so",
+        "SanitizerCoveragePCGUARD.so",
+    ];
 
     for sl in shared_libraries {
-      std::fs::copy(
-          work_dir.join(sl),
-          common::afl_llvm_dir(base).join(sl),
-      )
-      .expect(&format!("Couldn't copy shared object file {}", sl));
-    };
+        std::fs::copy(work_dir.join(sl), common::afl_llvm_dir(base).join(sl))
+            .expect(&format!("Couldn't copy shared object file {}", sl));
+    }
 
     let status = Command::new(AR_CMD)
         .arg("r")
