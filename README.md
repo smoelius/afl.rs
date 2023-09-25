@@ -1,6 +1,10 @@
 ## Fork of afl.rs for cmplog - how to run
-`CC=clang-16 CXX=clang++-16 LLVM_CONFIG=llvm-config-16 cargo install --path=.`
-
+```bash
+git submodule init
+git submodule update --recursive
+cd cargo-afl
+CC=clang-16 CXX=clang++-16 LLVM_CONFIG=llvm-config-16 cargo install --path=.`
+```
 
 <h1 align="center">
   <a href="https://github.com/frewsxcv/afl.rs/issues/66"><img src="etc/logo.gif" alt="afl.rs logo"></a>
