@@ -1,3 +1,6 @@
+use std::env;
+use std::path::Path;
+
 fn main() {
     let building_in_cargo_home = home::cargo_home()
         .map(|path| Path::new(env!("CARGO_MANIFEST_DIR")).starts_with(path))
