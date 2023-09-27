@@ -65,19 +65,26 @@ fn main() {
 }
 
 fn get_llvm_config() -> String {    
-    // check if llvm-tools are installed
-
     // Fetch the llvm version of the rust toolchain and set the LLVM_CONFIG environement variable to the same version 
     // This is needed to compile the llvm plugins (needed for cmplog) from afl with the right LLVM version
     let version_meta = rustc_version::version_meta().unwrap();
     let llvm_version = version_meta.llvm_version.unwrap().major.to_string();
     let mut llvm_config = "llvm-config-".to_string();
     llvm_config.push_str(&llvm_version);
+
+
     return llvm_config;
 }
 
 fn build_afl(work_dir: &Path, base: Option<&Path>, llvm_config: String) {
 
+    // check if llvm tools are installed and with the good version for the plugin compilation
+    let mut command = Command::new(llvm_config.clone());
+    command
+        .args(["--version"]);
+    let status = command.status().expect(&format!("could not run {llvm_config} --version"));
+    assert!(status.success());
+    
     // if you had already installed cargo-afl previously you **must** clean AFL++
     let mut command = Command::new("make");
     command
@@ -92,7 +99,7 @@ fn build_afl(work_dir: &Path, base: Option<&Path>, llvm_config: String) {
         .env("LLVM_CONFIG", llvm_config)
         .env_remove("DEBUG");
 
-    let status = command.status().expect("could not run 'make'");
+    let status = command.status().expect("could not run 'make clean'");
     assert!(status.success());
 
     let mut command = Command::new("make");
@@ -106,7 +113,7 @@ fn build_afl(work_dir: &Path, base: Option<&Path>, llvm_config: String) {
         .env("DESTDIR", common::afl_dir(base))
         .env("PREFIX", "")
         .env_remove("DEBUG");
-    let status = command.status().expect("could not run 'make'");
+    let status = command.status().expect("could not run 'make install'");
     assert!(status.success());
 }
 

@@ -3,27 +3,6 @@
 Note that this requires LLVM to be natively installed with the same version that is used by the nightly in use!
 You also need to install the rust llvm-tools.
 
-
-```bash
-# ensure you have Rust's llvm-tools installed for this nightly!
-rustup component add llvm-tools
-cd cmplog
-git pull
-git submodule init
-git submodule update --recursive
-# if you had already installed cargo-afl previously you **must** clean AFL++
-make -C cargo-afl/AFLplusplus clean
-# now comes the big hurdle. we need to ensure that the necessary LLVM version is present:
-LLVMVERSION=$(ls ~/.rustup/toolchains/$(rustup show|grep default|tail -n 1|awk '{print$1}')/lib/libLLVM-*.so|sed 's/.*libLLVM-//'|sed 's/-.*//')
-if [ "$(llvm-config-$LLVMVERSION --version | sed 's/\..*//')" == "$LLVMVERSION" ]; then
-  LLVM_CONFIG=llvm-config-$LLVMVERSION cargo install --path cargo-afl --force
-else
-  echo ERROR: necessary LLVM version $LLVMVERSION not installed. Get llvm.sh from https://apt.llvm.org and install it.
-fi
-# Done! :-)
-
-```
-
 <h1 align="center">
   <a href="https://github.com/frewsxcv/afl.rs/issues/66"><img src="etc/logo.gif" alt="afl.rs logo"></a>
   <br>
