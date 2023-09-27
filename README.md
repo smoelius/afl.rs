@@ -7,8 +7,6 @@ You also need to install the rust llvm-tools.
 ```bash
 # ensure you have Rust's llvm-tools installed for this nightly!
 rustup component add llvm-tools
-# clone our cargo-afl fork that supports AFL++'s LLVM plugins
-git clone ssh://git@ssh.gitlab.srlabs.de:45983/bruno/cmplog
 cd cmplog
 git pull
 git submodule init
