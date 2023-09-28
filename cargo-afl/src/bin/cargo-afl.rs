@@ -1,3 +1,5 @@
+#![allow(unused_assignments)]
+
 use clap::crate_version;
 
 use std::env;
@@ -301,25 +303,45 @@ where
     let binding = common::afl_llvm_dir(None);
     let p = binding.display();
 
-    /*
-           // either these or cmplog-* + SanitizerCoveragePCGUARD, not both!
-           -C llvm-args=-sanitizer-coverage-level=3 \
+    let mut rustflags = "".to_string();
+
+
+    if cfg!(feature = "cmplog") {
+
+        // Make sure we are on nightly for the -Z flags
+        if rustc_version::version_meta().unwrap().channel == rustc_version::Channel::Nightly {   } else {
+            panic!("cargo-afl must be compiled with nightly for the cmplog feature")
+        }
+
+        let llvm_config = common::get_llvm_config();
+
+        // check if llvm tools are installed and with the good version for the plugin compilation
+        let mut command = Command::new(llvm_config.clone());
+        command.args(["--version"]);
+        let status = command
+            .status()
+            .unwrap_or_else(|_| panic!("could not run {llvm_config} --version"));
+        assert!(status.success());
+
+        rustflags = format!(
+            "-C debug-assertions \
+             -C overflow_checks \
+             -C passes={passes} \
+             -C codegen-units=1 \
+             -Z llvm-plugins={p}/cmplog-instructions-pass.so  \
+             -Z llvm-plugins={p}/cmplog-routines-pass.so \
+             -Z llvm-plugins={p}/cmplog-switches-pass.so \
+             -Z llvm-plugins={p}/SanitizerCoveragePCGUARD.so \
+             -C opt-level=3 \
+             -C target-cpu=native "
+        );
+    } else {
+        rustflags = "-C llvm-args=-sanitizer-coverage-level=3 \
            -C llvm-args=-sanitizer-coverage-trace-pc-guard \
            -C llvm-args=-sanitizer-coverage-prune-blocks=0 \
-           -C llvm-args=-sanitizer-coverage-trace-compares \
-    */
-    let mut rustflags = format!(
-        "-C debug-assertions \
-         -C overflow_checks \
-         -C passes={passes} \
-         -C codegen-units=1 \
-         -Z llvm-plugins={p}/cmplog-instructions-pass.so  \
-         -Z llvm-plugins={p}/cmplog-routines-pass.so \
-         -Z llvm-plugins={p}/cmplog-switches-pass.so \
-         -Z llvm-plugins={p}/SanitizerCoveragePCGUARD.so \
-         -C opt-level=3 \
-         -C target-cpu=native "
-    );
+           -C llvm-args=-sanitizer-coverage-trace-compares
+           ".to_string();
+    }
 
     if cfg!(not(feature = "no_cfg_fuzzing")) {
         rustflags.push_str("--cfg fuzzing ");

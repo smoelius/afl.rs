@@ -29,7 +29,13 @@ fn main() {
         let slice = &data[16..27];
         let match_string = "HelloWorld";
         let compare_string = String::from_utf8(slice.to_vec()).unwrap_or_default();
-        println!("slide {} - len1 {} - len2 {} - string {}\n", slice.len(), compare_string.len(), match_string.len(), compare_string);
+        println!(
+            "slide {} - len1 {} - len2 {} - string {}\n",
+            slice.len(),
+            compare_string.len(),
+            match_string.len(),
+            compare_string
+        );
         if compare_string != match_string {
             return;
         }

@@ -72,3 +72,15 @@ pub fn object_file_path(base: Option<&Path>) -> PathBuf {
 pub fn archive_file_path(base: Option<&Path>) -> PathBuf {
     afl_llvm_dir(base).join("libafl-llvm-rt.a")
 }
+
+#[allow(dead_code)]
+#[must_use]
+pub fn get_llvm_config() -> String {
+    // Fetch the llvm version of the rust toolchain and set the LLVM_CONFIG environement variable to the same version
+    // This is needed to compile the llvm plugins (needed for cmplog) from afl with the right LLVM version
+    let version_meta = rustc_version::version_meta().unwrap();
+    let llvm_version = version_meta.llvm_version.unwrap().major.to_string();
+    let mut llvm_config = "llvm-config-".to_string();
+    llvm_config.push_str(&llvm_version);
+    llvm_config
+}
