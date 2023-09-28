@@ -1,4 +1,3 @@
-use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -14,45 +13,24 @@ static AR_CMD: &str = "ar";
 mod common;
 
 fn main() {
-    let installing = home::cargo_home()
-        .map(|path| Path::new(env!("CARGO_MANIFEST_DIR")).starts_with(path))
-        .unwrap()
-        || env::var("TESTING_INSTALL").is_ok();
 
-    let building_on_docs_rs = env::var("DOCS_RS").is_ok();
+    let mut command = Command::new("git");
+    command
+        .args(["submodule", "init"]);
 
-    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+    let status = command.status().expect("could not run 'git submodule init'");
+    assert!(status.success());
 
-    // smoelius: Build AFLplusplus in a temporary directory when installing or when building on docs.rs.
-    let work_dir = if installing || building_on_docs_rs {
-        let tempdir = tempfile::tempdir_in(&out_dir).unwrap();
-        if Path::new(AFL_SRC_PATH).join(".git").is_dir() {
-            let status = Command::new("git")
-                .args(["clone", AFL_SRC_PATH, &*tempdir.path().to_string_lossy()])
-                .status()
-                .expect("could not run 'git'");
-            assert!(status.success());
-        } else {
-            fs_extra::dir::copy(
-                AFL_SRC_PATH,
-                tempdir.path(),
-                &fs_extra::dir::CopyOptions {
-                    content_only: true,
-                    ..Default::default()
-                },
-            )
-            .unwrap();
-        }
-        tempdir.into_path()
-    } else {
-        PathBuf::from(AFL_SRC_PATH)
-    };
+    let mut command = Command::new("git");
+    command
+        .args(["submodule", "update"]);
 
-    let base = if building_on_docs_rs {
-        Some(out_dir)
-    } else {
-        None
-    };
+    let status = command.status().expect("could not run 'git submodule update'");
+    assert!(status.success());
+
+    let work_dir = PathBuf::from(AFL_SRC_PATH);
+
+    let base: Option<&Path> = None;
 
     // smoelius: Lock `work_dir` until the build script exits.
     #[cfg(unix)]
