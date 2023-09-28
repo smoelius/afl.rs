@@ -43,10 +43,10 @@ fn main() {
         llvm_config = common::get_llvm_config();
     }
 
-    build_afl(&work_dir, base.as_deref(), llvm_config);
+    build_afl(&work_dir, base, llvm_config);
 
     if cfg!(feature = "cmplog") {
-        build_afl_llvm_runtime(&work_dir, base.as_deref());
+        build_afl_llvm_runtime(&work_dir, base);
     }
 }
 
