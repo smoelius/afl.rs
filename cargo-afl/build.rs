@@ -88,7 +88,7 @@ fn build_afl(work_dir: &Path, base: Option<&Path>, llvm_config: String) {
     }
 
     // if you had already installed cargo-afl previously you **must** clean AFL++
-    let mut command = Command::new("make");
+    let mut command = Command::new("gmake");
     command
         .current_dir(work_dir)
         .args(["clean"])
@@ -104,7 +104,7 @@ fn build_afl(work_dir: &Path, base: Option<&Path>, llvm_config: String) {
     let status = command.status().expect("could not run 'make clean'");
     assert!(status.success());
 
-    let mut command = Command::new("make");
+    let mut command = Command::new("gmake");
     command
         .current_dir(work_dir)
         .args(["install"])

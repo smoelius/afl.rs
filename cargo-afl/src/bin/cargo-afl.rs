@@ -377,6 +377,7 @@ where
         .env("TSAN_OPTIONS", tsan_options)
         .env("AFL_LLVM_INSTRUMENT", "PCGUARD")
         .env("AFL_LLVM_CMPLOG", "1")
+        .env("AFL_QUIET", "1")
         .status()
         .unwrap();
     process::exit(status.code().unwrap_or(1));
