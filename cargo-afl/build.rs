@@ -13,19 +13,20 @@ static AR_CMD: &str = "ar";
 mod common;
 
 fn main() {
-
     let mut command = Command::new("git");
-    command
-        .args(["submodule", "init"]);
+    command.args(["submodule", "init"]);
 
-    let status = command.status().expect("could not run 'git submodule init'");
+    let status = command
+        .status()
+        .expect("could not run 'git submodule init'");
     assert!(status.success());
 
     let mut command = Command::new("git");
-    command
-        .args(["submodule", "update"]);
+    command.args(["submodule", "update"]);
 
-    let status = command.status().expect("could not run 'git submodule update'");
+    let status = command
+        .status()
+        .expect("could not run 'git submodule update'");
     assert!(status.success());
 
     let work_dir = PathBuf::from(AFL_SRC_PATH);
