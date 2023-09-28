@@ -305,11 +305,9 @@ where
 
     let mut rustflags = "".to_string();
 
-
     if cfg!(feature = "cmplog") {
-
         // Make sure we are on nightly for the -Z flags
-        if rustc_version::version_meta().unwrap().channel == rustc_version::Channel::Nightly {   } else {
+        if rustc_version::version_meta().unwrap().channel != rustc_version::Channel::Nightly {
             panic!("cargo-afl must be compiled with nightly for the cmplog feature")
         }
 
@@ -340,7 +338,8 @@ where
            -C llvm-args=-sanitizer-coverage-trace-pc-guard \
            -C llvm-args=-sanitizer-coverage-prune-blocks=0 \
            -C llvm-args=-sanitizer-coverage-trace-compares
-           ".to_string();
+           "
+        .to_string();
     }
 
     if cfg!(not(feature = "no_cfg_fuzzing")) {

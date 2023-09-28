@@ -59,24 +59,22 @@ fn main() {
     let _file = sys::lock_path(&work_dir).unwrap();
 
     let mut llvm_config = "".to_string();
-    
+
     if cfg!(feature = "cmplog") {
         llvm_config = common::get_llvm_config();
     }
 
     build_afl(&work_dir, base.as_deref(), llvm_config);
-    
+
     if cfg!(feature = "cmplog") {
         build_afl_llvm_runtime(&work_dir, base.as_deref());
     }
 }
 
 fn build_afl(work_dir: &Path, base: Option<&Path>, llvm_config: String) {
-
-    if cfg!(feature = "cmplog")
-    {
+    if cfg!(feature = "cmplog") {
         // Make sure we are on nightly for the -Z flags
-        if rustc_version::version_meta().unwrap().channel == rustc_version::Channel::Nightly {   } else {
+        if rustc_version::version_meta().unwrap().channel != rustc_version::Channel::Nightly {
             panic!("cargo-afl must be compiled with nightly for the cmplog feature")
         }
 
@@ -87,40 +85,39 @@ fn build_afl(work_dir: &Path, base: Option<&Path>, llvm_config: String) {
             .status()
             .unwrap_or_else(|_| panic!("could not run {llvm_config} --version"));
         assert!(status.success());
-    } 
+    }
 
-        // if you had already installed cargo-afl previously you **must** clean AFL++
-        let mut command = Command::new("make");
-        command
-            .current_dir(work_dir)
-            .args(["clean"])
-            // skip the checks for the legacy x86 afl-gcc compiler
-            .env("AFL_NO_X86", "1")
-            // build just the runtime to avoid troubles with Xcode clang on macOS
-            //.env("NO_BUILD", "1")
-            .env("DESTDIR", common::afl_dir(base))
-            .env("PREFIX", "")
-            .env("LLVM_CONFIG", llvm_config.clone())
-            .env_remove("DEBUG");
+    // if you had already installed cargo-afl previously you **must** clean AFL++
+    let mut command = Command::new("make");
+    command
+        .current_dir(work_dir)
+        .args(["clean"])
+        // skip the checks for the legacy x86 afl-gcc compiler
+        .env("AFL_NO_X86", "1")
+        // build just the runtime to avoid troubles with Xcode clang on macOS
+        //.env("NO_BUILD", "1")
+        .env("DESTDIR", common::afl_dir(base))
+        .env("PREFIX", "")
+        .env("LLVM_CONFIG", llvm_config.clone())
+        .env_remove("DEBUG");
 
-        let status = command.status().expect("could not run 'make clean'");
-        assert!(status.success());
+    let status = command.status().expect("could not run 'make clean'");
+    assert!(status.success());
 
-        let mut command = Command::new("make");
-        command
-            .current_dir(work_dir)
-            .args(["install"])
-            // skip the checks for the legacy x86 afl-gcc compiler
-            .env("AFL_NO_X86", "1")
-            // build just the runtime to avoid troubles with Xcode clang on macOS
-            //.env("NO_BUILD", "1")
-            .env("DESTDIR", common::afl_dir(base))
-            .env("PREFIX", "")
-            .env("LLVM_CONFIG", llvm_config)
-            .env_remove("DEBUG");
-        let status = command.status().expect("could not run 'make install'");
-        assert!(status.success());
-
+    let mut command = Command::new("make");
+    command
+        .current_dir(work_dir)
+        .args(["install"])
+        // skip the checks for the legacy x86 afl-gcc compiler
+        .env("AFL_NO_X86", "1")
+        // build just the runtime to avoid troubles with Xcode clang on macOS
+        //.env("NO_BUILD", "1")
+        .env("DESTDIR", common::afl_dir(base))
+        .env("PREFIX", "")
+        .env("LLVM_CONFIG", llvm_config)
+        .env_remove("DEBUG");
+    let status = command.status().expect("could not run 'make install'");
+    assert!(status.success());
 }
 
 fn build_afl_llvm_runtime(work_dir: &Path, base: Option<&Path>) {
