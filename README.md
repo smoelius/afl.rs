@@ -1,8 +1,3 @@
-## Fork of afl.rs for cmplog - how to run
-
-Note that this requires LLVM to be natively installed with the same version that is used by the nightly in use!
-You also need to install the rust llvm-tools.
-
 <h1 align="center">
   <a href="https://github.com/frewsxcv/afl.rs/issues/66"><img src="etc/logo.gif" alt="afl.rs logo"></a>
   <br>
