@@ -307,7 +307,10 @@ where
 
     if cfg!(feature = "cmplog") {
         // Make sure we are on nightly for the -Z flags
-        assert!(rustc_version::version_meta().unwrap().channel == rustc_version::Channel::Nightly, "cargo-afl must be compiled with nightly for the cmplog feature");
+        assert!(
+            rustc_version::version_meta().unwrap().channel == rustc_version::Channel::Nightly,
+            "cargo-afl must be compiled with nightly for the cmplog feature"
+        );
 
         let llvm_config = common::get_llvm_config();
 

@@ -53,7 +53,10 @@ fn main() {
 fn build_afl(work_dir: &Path, base: Option<&Path>, llvm_config: String) {
     if cfg!(feature = "cmplog") {
         // Make sure we are on nightly for the -Z flags
-        assert!(rustc_version::version_meta().unwrap().channel == rustc_version::Channel::Nightly, "cargo-afl must be compiled with nightly for the cmplog feature");
+        assert!(
+            rustc_version::version_meta().unwrap().channel == rustc_version::Channel::Nightly,
+            "cargo-afl must be compiled with nightly for the cmplog feature"
+        );
 
         // check if llvm tools are installed and with the good version for the plugin compilation
         let mut command = Command::new(llvm_config.clone());
