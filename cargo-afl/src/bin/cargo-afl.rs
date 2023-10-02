@@ -303,13 +303,11 @@ where
     let binding = common::afl_llvm_dir(None);
     let p = binding.display();
 
-    let mut rustflags = "".to_string();
+    let mut rustflags = String::new();
 
     if cfg!(feature = "cmplog") {
         // Make sure we are on nightly for the -Z flags
-        if rustc_version::version_meta().unwrap().channel != rustc_version::Channel::Nightly {
-            panic!("cargo-afl must be compiled with nightly for the cmplog feature")
-        }
+        assert!(rustc_version::version_meta().unwrap().channel == rustc_version::Channel::Nightly, "cargo-afl must be compiled with nightly for the cmplog feature");
 
         let llvm_config = common::get_llvm_config();
 
