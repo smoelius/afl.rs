@@ -121,7 +121,7 @@ fn build_afl_llvm_runtime(work_dir: &Path, base: Option<&Path>) {
 
     for sl in shared_libraries {
         std::fs::copy(work_dir.join(sl), common::afl_llvm_dir(base).join(sl))
-            .unwrap_or_else(|_| panic!("Couldn't copy shared object file {}", sl));
+            .unwrap_or_else(|_| panic!("Couldn't copy shared object file {sl}"));
     }
 
     let status = Command::new(AR_CMD)
