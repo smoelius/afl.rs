@@ -1,10 +1,9 @@
-#![allow(unused_assignments)]
-
 use clap::crate_version;
 
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::process::{self, Command, Stdio};
+use std::collections::HashMap;
 
 #[path = "../common.rs"]
 mod common;
@@ -304,6 +303,9 @@ where
     let p = binding.display();
 
     let mut rustflags = String::new();
+    let mut environment_variables=  HashMap::<String, String>::new();
+    environment_variables.insert("ASAN_OPTIONS".to_string(), asan_options);
+    environment_variables.insert("TSAN_OPTIONS".to_string(), tsan_options);
 
     if cfg!(feature = "cmplog") {
         // Make sure we are on nightly for the -Z flags
@@ -322,7 +324,7 @@ where
             .unwrap_or_else(|_| panic!("could not run {llvm_config} --version"));
         assert!(status.success());
 
-        rustflags = format!(
+        rustflags.push_str(&format!(
             "-C debug-assertions \
              -C overflow_checks \
              -C passes={passes} \
@@ -333,14 +335,20 @@ where
              -Z llvm-plugins={p}/SanitizerCoveragePCGUARD.so \
              -C opt-level=3 \
              -C target-cpu=native "
-        );
+        ));
+
+        environment_variables.insert("AFL_LLVM_INSTRUMENT".to_string(), "PCGUARD".to_string());
+        environment_variables.insert("AFL_LLVM_CMPLOG".to_string(), "1".to_string());
+        environment_variables.insert("AFL_QUIET".to_string(), "1".to_string());
+
     } else {
-        rustflags = "-C llvm-args=-sanitizer-coverage-level=3 \
+        rustflags.push_str(
+            "-C llvm-args=-sanitizer-coverage-level=3 \
            -C llvm-args=-sanitizer-coverage-trace-pc-guard \
            -C llvm-args=-sanitizer-coverage-prune-blocks=0 \
            -C llvm-args=-sanitizer-coverage-trace-compares
-           "
-        .to_string();
+           ",
+        );
     }
 
     if cfg!(not(feature = "no_cfg_fuzzing")) {
@@ -369,16 +377,13 @@ where
     rustflags.push_str(&env::var("RUSTFLAGS").unwrap_or_default());
     rustdocflags.push_str(&env::var("RUSTDOCFLAGS").unwrap_or_default());
 
+    environment_variables.insert("RUSTFLAGS".to_string(), rustflags);
+    environment_variables.insert("RUSTDOCFLAGS".to_string(), rustdocflags);
+
     let status = Command::new(cargo_path)
         .arg(subcommand)
         .args(args)
-        .env("RUSTFLAGS", &rustflags)
-        .env("RUSTDOCFLAGS", &rustdocflags)
-        .env("ASAN_OPTIONS", asan_options)
-        .env("TSAN_OPTIONS", tsan_options)
-        .env("AFL_LLVM_INSTRUMENT", "PCGUARD")
-        .env("AFL_LLVM_CMPLOG", "1")
-        .env("AFL_QUIET", "1")
+        .envs(&environment_variables)
         .status()
         .unwrap();
     process::exit(status.code().unwrap_or(1));
