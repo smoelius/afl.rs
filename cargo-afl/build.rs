@@ -28,9 +28,10 @@ fn main() {
     }
 
     build_afl(&work_dir, base, llvm_config);
+    build_afl_llvm_runtime(&work_dir, base);
 
     if cfg!(feature = "cmplog") {
-        build_afl_llvm_runtime(&work_dir, base);
+        build_afl_llvm_plugins(&work_dir, base);
     }
 }
 
@@ -91,6 +92,16 @@ fn build_afl_llvm_runtime(work_dir: &Path, base: Option<&Path>) {
     )
     .expect("Couldn't copy object file");
 
+    let status = Command::new(AR_CMD)
+        .arg("r")
+        .arg(common::archive_file_path(base))
+        .arg(common::object_file_path(base))
+        .status()
+        .expect("could not run 'ar'");
+    assert!(status.success());
+}
+
+fn build_afl_llvm_plugins(work_dir: &Path, base: Option<&Path>) {
     let shared_libraries = [
         "afl-llvm-dict2file.so",
         "afl-llvm-pass.so",

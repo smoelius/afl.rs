@@ -1,9 +1,9 @@
 use clap::crate_version;
 
+use std::collections::HashMap;
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::process::{self, Command, Stdio};
-use std::collections::HashMap;
 
 #[path = "../common.rs"]
 mod common;
@@ -302,8 +302,15 @@ where
     let binding = common::afl_llvm_dir(None);
     let p = binding.display();
 
-    let mut rustflags = String::new();
-    let mut environment_variables=  HashMap::<String, String>::new();
+    let mut rustflags = format!(
+        "-C debug-assertions \
+             -C overflow_checks \
+             -C passes={passes} \
+             -C codegen-units=1 \
+             -C opt-level=3 \
+             -C target-cpu=native "
+    );
+    let mut environment_variables = HashMap::<String, String>::new();
     environment_variables.insert("ASAN_OPTIONS".to_string(), asan_options);
     environment_variables.insert("TSAN_OPTIONS".to_string(), tsan_options);
 
@@ -325,29 +332,23 @@ where
         assert!(status.success());
 
         rustflags.push_str(&format!(
-            "-C debug-assertions \
-             -C overflow_checks \
-             -C passes={passes} \
-             -C codegen-units=1 \
-             -Z llvm-plugins={p}/cmplog-instructions-pass.so  \
-             -Z llvm-plugins={p}/cmplog-routines-pass.so \
-             -Z llvm-plugins={p}/cmplog-switches-pass.so \
-             -Z llvm-plugins={p}/SanitizerCoveragePCGUARD.so \
-             -C opt-level=3 \
-             -C target-cpu=native "
+            "-Z llvm-plugins={p}/cmplog-instructions-pass.so  \
+            -Z llvm-plugins={p}/cmplog-routines-pass.so \
+            -Z llvm-plugins={p}/cmplog-switches-pass.so \
+            -Z llvm-plugins={p}/SanitizerCoveragePCGUARD.so
+             "
         ));
 
         environment_variables.insert("AFL_LLVM_INSTRUMENT".to_string(), "PCGUARD".to_string());
         environment_variables.insert("AFL_LLVM_CMPLOG".to_string(), "1".to_string());
         environment_variables.insert("AFL_QUIET".to_string(), "1".to_string());
-
     } else {
         rustflags.push_str(
             "-C llvm-args=-sanitizer-coverage-level=3 \
-           -C llvm-args=-sanitizer-coverage-trace-pc-guard \
-           -C llvm-args=-sanitizer-coverage-prune-blocks=0 \
-           -C llvm-args=-sanitizer-coverage-trace-compares
-           ",
+            -C llvm-args=-sanitizer-coverage-trace-pc-guard \
+            -C llvm-args=-sanitizer-coverage-prune-blocks=0 \
+            -C llvm-args=-sanitizer-coverage-trace-compares
+            ",
         );
     }
 
