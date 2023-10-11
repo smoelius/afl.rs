@@ -80,7 +80,5 @@ pub fn get_llvm_config() -> String {
     // This is needed to compile the llvm plugins (needed for cmplog) from afl with the right LLVM version
     let version_meta = rustc_version::version_meta().unwrap();
     let llvm_version = version_meta.llvm_version.unwrap().major.to_string();
-    let mut llvm_config = "llvm-config-".to_string();
-    llvm_config.push_str(&llvm_version);
-    llvm_config
+    format!("llvm-config-{llvm_version}")
 }
