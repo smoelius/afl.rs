@@ -67,7 +67,7 @@ fn main() {
 }
 
 fn build_afl(work_dir: &Path, base: Option<&Path>) {
-    let llvm_config = common::get_llvm_config();
+    let llvm_config = get_llvm_config();
 
     if cfg!(feature = "cmplog") {
         // Make sure we are on nightly for the -Z flags
@@ -138,6 +138,14 @@ fn copy_afl_llvm_plugins(work_dir: &Path, base: Option<&Path>) {
         std::fs::copy(work_dir.join(sl), common::afl_llvm_dir(base).join(sl))
             .unwrap_or_else(|_| panic!("Couldn't copy shared object file {sl}"));
     }
+}
+
+fn get_llvm_config() -> String {
+    // Fetch the llvm version of the rust toolchain and set the LLVM_CONFIG environement variable to the same version
+    // This is needed to compile the llvm plugins (needed for cmplog) from afl with the right LLVM version
+    let version_meta = rustc_version::version_meta().unwrap();
+    let llvm_version = version_meta.llvm_version.unwrap().major.to_string();
+    format!("llvm-config-{llvm_version}")
 }
 
 #[cfg(unix)]

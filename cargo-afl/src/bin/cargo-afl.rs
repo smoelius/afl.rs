@@ -321,16 +321,6 @@ where
             "cargo-afl must be compiled with nightly for the cmplog feature"
         );
 
-        let llvm_config = common::get_llvm_config();
-
-        // check if llvm tools are installed and with the good version for the plugin compilation
-        let mut command = Command::new(llvm_config.clone());
-        command.args(["--version"]);
-        let status = command
-            .status()
-            .unwrap_or_else(|_| panic!("could not run {llvm_config} --version"));
-        assert!(status.success());
-
         rustflags.push_str(&format!(
             "-Z llvm-plugins={p}/cmplog-instructions-pass.so  \
             -Z llvm-plugins={p}/cmplog-routines-pass.so \
