@@ -336,7 +336,7 @@ where
             -Z llvm-plugins={p}/cmplog-routines-pass.so \
             -Z llvm-plugins={p}/cmplog-switches-pass.so \
             -Z llvm-plugins={p}/SanitizerCoveragePCGUARD.so
-             "
+            "
         ));
 
         environment_variables.insert("AFL_LLVM_INSTRUMENT".to_string(), "PCGUARD".to_string());

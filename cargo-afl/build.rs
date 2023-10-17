@@ -1,3 +1,4 @@
+use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -13,29 +14,61 @@ static AR_CMD: &str = "ar";
 mod common;
 
 fn main() {
-    let work_dir = PathBuf::from(AFL_SRC_PATH);
+    let installing = home::cargo_home()
+        .map(|path| Path::new(env!("CARGO_MANIFEST_DIR")).starts_with(path))
+        .unwrap()
+        || env::var("TESTING_INSTALL").is_ok();
 
-    let base: Option<&Path> = None;
+    let building_on_docs_rs = env::var("DOCS_RS").is_ok();
+
+    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+
+    // smoelius: Build AFLplusplus in a temporary directory when installing or when building on docs.rs.
+    let work_dir = if installing || building_on_docs_rs {
+        let tempdir = tempfile::tempdir_in(&out_dir).unwrap();
+        if Path::new(AFL_SRC_PATH).join(".git").is_dir() {
+            let status = Command::new("git")
+                .args(["clone", AFL_SRC_PATH, &*tempdir.path().to_string_lossy()])
+                .status()
+                .expect("could not run 'git'");
+            assert!(status.success());
+        } else {
+            fs_extra::dir::copy(
+                AFL_SRC_PATH,
+                tempdir.path(),
+                &fs_extra::dir::CopyOptions {
+                    content_only: true,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+        }
+        tempdir.into_path()
+    } else {
+        PathBuf::from(AFL_SRC_PATH)
+    };
+
+    let base = if building_on_docs_rs {
+        Some(out_dir)
+    } else {
+        None
+    };
 
     // smoelius: Lock `work_dir` until the build script exits.
     #[cfg(unix)]
     let _file = sys::lock_path(&work_dir).unwrap();
 
-    let mut llvm_config = String::new();
+    build_afl(&work_dir, base.as_deref());
+    build_afl_llvm_runtime(&work_dir, base.as_deref());
 
     if cfg!(feature = "cmplog") {
-        llvm_config = common::get_llvm_config();
-    }
-
-    build_afl(&work_dir, base, llvm_config);
-    build_afl_llvm_runtime(&work_dir, base);
-
-    if cfg!(feature = "cmplog") {
-        build_afl_llvm_plugins(&work_dir, base);
+        copy_afl_llvm_plugins(&work_dir, base.as_deref());
     }
 }
 
-fn build_afl(work_dir: &Path, base: Option<&Path>, llvm_config: String) {
+fn build_afl(work_dir: &Path, base: Option<&Path>) {
+    let llvm_config = common::get_llvm_config();
+
     if cfg!(feature = "cmplog") {
         // Make sure we are on nightly for the -Z flags
         assert!(
@@ -56,7 +89,7 @@ fn build_afl(work_dir: &Path, base: Option<&Path>, llvm_config: String) {
     let mut command = Command::new("make");
     command
         .current_dir(work_dir)
-        .args(["clean"])
+        .args(["clean", "install"])
         // skip the checks for the legacy x86 afl-gcc compiler
         .env("AFL_NO_X86", "1")
         // build just the runtime to avoid troubles with Xcode clang on macOS
@@ -66,22 +99,9 @@ fn build_afl(work_dir: &Path, base: Option<&Path>, llvm_config: String) {
         .env("LLVM_CONFIG", llvm_config.clone())
         .env_remove("DEBUG");
 
-    let status = command.status().expect("could not run 'make clean'");
-    assert!(status.success());
-
-    let mut command = Command::new("make");
-    command
-        .current_dir(work_dir)
-        .args(["install"])
-        // skip the checks for the legacy x86 afl-gcc compiler
-        .env("AFL_NO_X86", "1")
-        // build just the runtime to avoid troubles with Xcode clang on macOS
-        //.env("NO_BUILD", "1")
-        .env("DESTDIR", common::afl_dir(base))
-        .env("PREFIX", "")
-        .env("LLVM_CONFIG", llvm_config)
-        .env_remove("DEBUG");
-    let status = command.status().expect("could not run 'make install'");
+    let status = command
+        .status()
+        .expect("could not run 'make clean, make install'");
     assert!(status.success());
 }
 
@@ -101,7 +121,7 @@ fn build_afl_llvm_runtime(work_dir: &Path, base: Option<&Path>) {
     assert!(status.success());
 }
 
-fn build_afl_llvm_plugins(work_dir: &Path, base: Option<&Path>) {
+fn copy_afl_llvm_plugins(work_dir: &Path, base: Option<&Path>) {
     let shared_libraries = [
         "afl-llvm-dict2file.so",
         "afl-llvm-pass.so",
@@ -118,14 +138,6 @@ fn build_afl_llvm_plugins(work_dir: &Path, base: Option<&Path>) {
         std::fs::copy(work_dir.join(sl), common::afl_llvm_dir(base).join(sl))
             .unwrap_or_else(|_| panic!("Couldn't copy shared object file {sl}"));
     }
-
-    let status = Command::new(AR_CMD)
-        .arg("r")
-        .arg(common::archive_file_path(base))
-        .arg(common::object_file_path(base))
-        .status()
-        .expect("could not run 'ar'");
-    assert!(status.success());
 }
 
 #[cfg(unix)]
