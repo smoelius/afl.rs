@@ -58,6 +58,7 @@ jobs:
         run: |
           LLVM_VERSION="$(rustc --version -v | grep '^LLVM version:' | grep -o '[0-9]\+' | head -n 1)"
           if [[ ${{ matrix.environment  }} = 'macos-latest' ]]; then
+            brew update
             brew install llvm@"$LLVM_VERSION"
           else
             wget https://apt.llvm.org/llvm.sh
