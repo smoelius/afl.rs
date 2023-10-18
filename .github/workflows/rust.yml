@@ -60,7 +60,7 @@ jobs:
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          LLVM_VERSION="$(rustc --version -v | sed -n 's/^LLVM version: \([^.]*\).*$/\1/;t print;q;print: p')"
+          LLVM_VERSION="$(rustc --version -v | sed -n 's/^LLVM version: \([^.]*\).*$/\1/;t print;b next;:print p;:next n')"
           sudo ./llvm.sh "$LLVM_VERSION"
       - name: Build
         run: cargo build --features=${{ matrix.features }} -vv
