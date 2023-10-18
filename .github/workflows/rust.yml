@@ -65,6 +65,8 @@ jobs:
             chmod +x llvm.sh
             sudo ./llvm.sh "$LLVM_VERSION"
           fi
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
       - name: Build
         run: cargo build --features=${{ matrix.features }} -vv
       - name: Run afl-system-config
