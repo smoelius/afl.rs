@@ -55,7 +55,7 @@ jobs:
       - name: Rustup
         run: rustup default ${{ matrix.toolchain }}
       - if: ${{ matrix.environment == 'macos-latest' }}
-        run: sudo brew install gnu-sed
+        run: brew install gnu-sed
       - name: Install LLVM
         run: |
           wget https://apt.llvm.org/llvm.sh
