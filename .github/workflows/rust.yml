@@ -56,10 +56,14 @@ jobs:
         run: rustup default ${{ matrix.toolchain }}
       - name: Install LLVM
         run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
           LLVM_VERSION="$(rustc --version -v | grep '^LLVM version:' | grep -o '[0-9]\+' | head -n 1)"
-          sudo ./llvm.sh "$LLVM_VERSION"
+          if [[ ${{ matrix.environment  }} = 'macos-latest' ]]; then
+            brew install llvm@"$LLVM_VERSION"
+          else
+            wget https://apt.llvm.org/llvm.sh
+            chmod +x llvm.sh
+            sudo ./llvm.sh "$LLVM_VERSION"
+          fi
       - name: Build
         run: cargo build --features=${{ matrix.features }} -vv
       - name: Run afl-system-config
