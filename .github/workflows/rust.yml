@@ -34,12 +34,14 @@ jobs:
       matrix:
         environment: [ubuntu-latest, macos-latest]
         toolchain: [stable, nightly]
-        features: [default, cmplog]
         cc: [cc, clang]
-        exclude:
-          - toolchain: stable
-            features: cmplog
         include:
+          - toolchain: stable
+            features: default
+          - toolchain: nightly
+            features: default
+          - toolchain: nightly
+            features: cmplog
           - cc: cc
             cxx: c++
           - cc: clang
@@ -58,7 +60,7 @@ jobs:
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          LLVM_VERSION="$(rustc --version -v | sed -n 's/^LLVM version: \([^.]*\).*$/\1/;T;p')"
+          LLVM_VERSION="$(rustc --version -v | sed -n 's/^LLVM version: \([^.]*\).*$/\1/;t print;q;print: p')"
           sudo ./llvm.sh "$LLVM_VERSION"
       - name: Build
         run: cargo build --features=${{ matrix.features }} -vv
