@@ -61,7 +61,7 @@ jobs:
           if [[ ${{ matrix.environment  }} = 'macos-latest' ]]; then
             brew update
             brew install llvm@"$LLVM_VERSION" || true
-            echo "PATH="/usr/local/opt/llvm/bin:$PATH" >> "$GITHUB_OUTPUT"
+            echo "PATH=/usr/local/opt/llvm/bin:$PATH" >> "$GITHUB_OUTPUT"
           else
             wget https://apt.llvm.org/llvm.sh
             chmod +x llvm.sh
