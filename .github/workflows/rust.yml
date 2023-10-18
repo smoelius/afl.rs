@@ -54,13 +54,11 @@ jobs:
           submodules: true
       - name: Rustup
         run: rustup default ${{ matrix.toolchain }}
-      - if: ${{ matrix.environment == 'macos-latest' }}
-        run: brew install gnu-sed
       - name: Install LLVM
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          LLVM_VERSION="$(rustc --version -v | sed -n 's/^LLVM version: \([^.]*\).*$/\1/;T;p')"
+          LLVM_VERSION="$(rustc --version -v | grep '^LLVM version:' | grep -m 1 -o '[0-9]\+')"
           sudo ./llvm.sh "$LLVM_VERSION"
       - name: Build
         run: cargo build --features=${{ matrix.features }} -vv
