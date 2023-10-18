@@ -34,14 +34,12 @@ jobs:
       matrix:
         environment: [ubuntu-latest, macos-latest]
         toolchain: [stable, nightly]
+        features: [default, cmplog]
         cc: [cc, clang]
-        include:
+        exclude:
           - toolchain: stable
-            features: default
-          - toolchain: nightly
-            features: default
-          - toolchain: nightly
             features: cmplog
+        include:
           - cc: cc
             cxx: c++
           - cc: clang
@@ -56,11 +54,13 @@ jobs:
           submodules: true
       - name: Rustup
         run: rustup default ${{ matrix.toolchain }}
+      - if: ${{ matrix.environment == 'macos-latest' }}
+        run: sudo brew install gnu-sed
       - name: Install LLVM
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          LLVM_VERSION="$(rustc --version -v | sed -n 's/^LLVM version: \([^.]*\).*$/\1/;t print;b next;:print p;:next n')"
+          LLVM_VERSION="$(rustc --version -v | sed -n 's/^LLVM version: \([^.]*\).*$/\1/;T;p')"
           sudo ./llvm.sh "$LLVM_VERSION"
       - name: Build
         run: cargo build --features=${{ matrix.features }} -vv
