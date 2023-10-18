@@ -34,7 +34,7 @@ jobs:
       matrix:
         environment: [ubuntu-latest, macos-latest]
         toolchain: [stable, nightly]
-        features: ['', cmplog]
+        features: [default, cmplog]
         cc: [cc, clang]
         exclude:
           - toolchain: stable
@@ -49,13 +49,17 @@ jobs:
       CC: ${{ matrix.cc }}
       CXX: ${{ matrix.cxx }}
     steps:
-      - if: ${{ matrix.environment == 'ubuntu-latest' }}
-        run: sudo apt-get install llvm
       - uses: actions/checkout@v4
         with:
           submodules: true
       - name: Rustup
         run: rustup default ${{ matrix.toolchain }}
+      - name: Install LLVM
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          LLVM_VERSION="$(rustc --version -v | sed -n 's/^LLVM version: \([^.]*\).*$/\1/;T;p')"
+          sudo ./llvm.sh "$LLVM_VERSION"
       - name: Build
         run: cargo build --features=${{ matrix.features }} -vv
       - name: Run afl-system-config
