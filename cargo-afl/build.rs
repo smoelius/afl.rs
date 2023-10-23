@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -67,24 +68,29 @@ fn main() {
 }
 
 fn build_afl(work_dir: &Path, base: Option<&Path>) {
-    let mut llvm_config = String::new();
+    let mut environment_variables = HashMap::<String, String>::new();
 
     if cfg!(feature = "cmplog") {
-        llvm_config = check_llvm_and_get_config();
+        let llvm_config = check_llvm_and_get_config();
+        environment_variables.insert("LLVM_CONFIG".to_string(), llvm_config);
     }
+
+    // skip the checks for the legacy x86 afl-gcc compiler
+    environment_variables.insert("AFL_NO_X86".to_string(), "1".to_string());
+    // build just the runtime to avoid troubles with Xcode clang on macOS
+    //environment_variables.insert("NO_BUILD".to_string(), "1".to_string());
+    environment_variables.insert(
+        "DESTDIR".to_string(),
+        common::afl_dir(base).to_str().unwrap().to_string(),
+    );
+    environment_variables.insert("PREFIX".to_string(), String::new());
 
     // if you had already installed cargo-afl previously you **must** clean AFL++
     let mut command = Command::new("make");
     command
         .current_dir(work_dir)
         .args(["clean", "install"])
-        // skip the checks for the legacy x86 afl-gcc compiler
-        .env("AFL_NO_X86", "1")
-        // build just the runtime to avoid troubles with Xcode clang on macOS
-        //.env("NO_BUILD", "1")
-        .env("DESTDIR", common::afl_dir(base))
-        .env("PREFIX", "")
-        .env("LLVM_CONFIG", llvm_config.clone())
+        .envs(&environment_variables)
         .env_remove("DEBUG");
 
     let status = command

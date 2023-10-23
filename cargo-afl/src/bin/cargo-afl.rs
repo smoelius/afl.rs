@@ -1,5 +1,4 @@
 use clap::crate_version;
-
 use std::collections::HashMap;
 use std::env;
 use std::ffi::{OsStr, OsString};
