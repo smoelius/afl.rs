@@ -67,22 +67,10 @@ fn main() {
 }
 
 fn build_afl(work_dir: &Path, base: Option<&Path>) {
-    let llvm_config = get_llvm_config();
+    let mut llvm_config = String::new();
 
     if cfg!(feature = "cmplog") {
-        // Make sure we are on nightly for the -Z flags
-        assert!(
-            rustc_version::version_meta().unwrap().channel == rustc_version::Channel::Nightly,
-            "cargo-afl must be compiled with nightly for the cmplog feature"
-        );
-
-        // check if llvm tools are installed and with the good version for the plugin compilation
-        let mut command = Command::new(llvm_config.clone());
-        command.args(["--version"]);
-        let status = command
-            .status()
-            .unwrap_or_else(|_| panic!("could not run {llvm_config} --version"));
-        assert!(status.success());
+        llvm_config = check_llvm_and_get_config();
     }
 
     // if you had already installed cargo-afl previously you **must** clean AFL++
@@ -140,12 +128,39 @@ fn copy_afl_llvm_plugins(work_dir: &Path, base: Option<&Path>) {
     }
 }
 
-fn get_llvm_config() -> String {
-    // Fetch the llvm version of the rust toolchain and set the LLVM_CONFIG environement variable to the same version
-    // This is needed to compile the llvm plugins (needed for cmplog) from afl with the right LLVM version
+fn check_llvm_and_get_config() -> String {
+    // Make sure we are on nightly for the -Z flags
+    assert!(
+        rustc_version::version_meta().unwrap().channel == rustc_version::Channel::Nightly,
+        "cargo-afl must be compiled with nightly for the cmplog feature"
+    );
     let version_meta = rustc_version::version_meta().unwrap();
     let llvm_version = version_meta.llvm_version.unwrap().major.to_string();
-    format!("llvm-config-{llvm_version}")
+
+    // Fetch the llvm version of the rust toolchain and set the LLVM_CONFIG environment variable to the same version
+    // This is needed to compile the llvm plugins (needed for cmplog) from afl with the right LLVM version
+    let llvm_config = if cfg!(target_os = "macos") {
+        "llvm-config".to_string()
+    } else {
+        format!("llvm-config-{llvm_version}")
+    };
+
+    // check if llvm tools are installed and with the good version for the plugin compilation
+    let mut command = Command::new(llvm_config.clone());
+    command.args(["--version"]);
+    let out = command
+        .output()
+        .unwrap_or_else(|_| panic!("could not run {llvm_config} --version"));
+
+    let version = String::from_utf8(out.stdout)
+        .expect("could not convert llvm-config --version output to utf8");
+    let major = version
+        .split('.')
+        .next()
+        .expect("could not get major from llvm-config --version output");
+    assert!(major == llvm_version);
+
+    llvm_config
 }
 
 #[cfg(unix)]
