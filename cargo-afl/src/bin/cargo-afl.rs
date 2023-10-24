@@ -317,19 +317,18 @@ where
         // Make sure we are on nightly for the -Z flags
         assert!(
             rustc_version::version_meta().unwrap().channel == rustc_version::Channel::Nightly,
-            "cargo-afl must be compiled with nightly for the cmplog feature"
+            "cargo-afl must be compiled with nightly for CMPLOG and other advanced AFL++ features"
         );
 
         rustflags.push_str(&format!(
             "-Z llvm-plugins={p}/cmplog-instructions-pass.so  \
             -Z llvm-plugins={p}/cmplog-routines-pass.so \
             -Z llvm-plugins={p}/cmplog-switches-pass.so \
-            -Z llvm-plugins={p}/SanitizerCoveragePCGUARD.so
+            -Z llvm-plugins={p}/SanitizerCoveragePCGUARD.so \
+            -Z llvm-plugins={p}/afl-llvm-dict2file.so
             "
         ));
 
-        environment_variables.insert("AFL_LLVM_INSTRUMENT".to_string(), "PCGUARD".to_string());
-        environment_variables.insert("AFL_LLVM_CMPLOG".to_string(), "1".to_string());
         environment_variables.insert("AFL_QUIET".to_string(), "1".to_string());
     } else {
         rustflags.push_str(
