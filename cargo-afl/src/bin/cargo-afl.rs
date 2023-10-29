@@ -12,7 +12,7 @@ fn main() {
         let version = common::afl_rustc_version();
         eprintln!(
             "AFL LLVM runtime is not built with Rust {version}, run `cargo \
-             install --force afl` to build it."
+             install --force cargo-afl` to build it."
         );
         process::exit(1);
     }
@@ -340,7 +340,12 @@ where
         );
     }
 
-    if cfg!(not(feature = "no_cfg_fuzzing")) {
+    let no_cfg_fuzzing = env::var("AFL_NO_CFG_FUZZING").is_ok();
+    if no_cfg_fuzzing {
+        rustflags.push_str("--cfg no_fuzzing ");
+        // afl-fuzz is sensitive to AFL_ env variables. Let's remove this particular one - it did it's job
+        env::remove_var("AFL_NO_CFG_FUZZING");
+    } else {
         rustflags.push_str("--cfg fuzzing ");
     }
 
