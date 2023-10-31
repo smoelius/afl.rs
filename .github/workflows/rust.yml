@@ -34,11 +34,11 @@ jobs:
       matrix:
         environment: [ubuntu-latest, macos-latest]
         toolchain: [stable, nightly]
-        features: [default, cmplog]
+        features: [default, plugins]
         cc: [cc, clang]
         exclude:
           - toolchain: stable
-            features: cmplog
+            features: plugins
         include:
           - cc: cc
             cxx: c++

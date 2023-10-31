@@ -62,7 +62,7 @@ fn main() {
     build_afl(&work_dir, base.as_deref());
     build_afl_llvm_runtime(&work_dir, base.as_deref());
 
-    if cfg!(feature = "cmplog") {
+    if cfg!(feature = "plugins") {
         copy_afl_llvm_plugins(&work_dir, base.as_deref());
     }
 }
@@ -70,7 +70,7 @@ fn main() {
 fn build_afl(work_dir: &Path, base: Option<&Path>) {
     let mut environment_variables = HashMap::<String, String>::new();
 
-    if cfg!(feature = "cmplog") {
+    if cfg!(feature = "plugins") {
         let llvm_config = check_llvm_and_get_config();
         environment_variables.insert("LLVM_CONFIG".to_string(), llvm_config);
     }
@@ -138,7 +138,7 @@ fn check_llvm_and_get_config() -> String {
     // Make sure we are on nightly for the -Z flags
     assert!(
         rustc_version::version_meta().unwrap().channel == rustc_version::Channel::Nightly,
-        "cargo-afl must be compiled with nightly for the cmplog feature"
+        "cargo-afl must be compiled with nightly for the plugins feature"
     );
     let version_meta = rustc_version::version_meta().unwrap();
     let llvm_version = version_meta.llvm_version.unwrap().major.to_string();
