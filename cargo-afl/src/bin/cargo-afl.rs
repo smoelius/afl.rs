@@ -1,4 +1,3 @@
-use clap::crate_version;
 use std::collections::HashMap;
 use std::env;
 use std::ffi::{OsStr, OsString};
@@ -89,6 +88,12 @@ fn main() {
     }
 }
 
+macro_rules! concat_str {
+    ($s1:expr, $s2:expr) => {
+        concat!($s1, $s2)
+    };
+}
+
 #[allow(clippy::too_many_lines)]
 fn clap_app() -> clap::Command {
     use clap::{value_parser, Arg, Command};
@@ -96,13 +101,19 @@ fn clap_app() -> clap::Command {
     let help = "In addition to the subcommands above, Cargo subcommands are also \
                       supported (see `cargo help` for a list of all Cargo subcommands).";
 
+    const VERSION: &'static str = if cfg!(feature = "plugins") {
+        concat_str!(env!("CARGO_PKG_VERSION"), " [feature=plugins]")
+    } else {
+        env!("CARGO_PKG_VERSION")
+    };
+
     Command::new("cargo afl")
         .display_name("cargo")
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(
             Command::new("afl")
-                .version(crate_version!())
+                .version(VERSION)
                 .subcommand_required(true)
                 .arg_required_else_help(true)
                 .allow_external_subcommands(true)
