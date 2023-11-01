@@ -313,7 +313,7 @@ where
     environment_variables.insert("ASAN_OPTIONS".to_string(), asan_options);
     environment_variables.insert("TSAN_OPTIONS".to_string(), tsan_options);
 
-    if cfg!(feature = "cmplog") {
+    if cfg!(feature = "plugins") {
         // Make sure we are on nightly for the -Z flags
         assert!(
             rustc_version::version_meta().unwrap().channel == rustc_version::Channel::Nightly,
