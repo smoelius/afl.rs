@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -68,34 +67,27 @@ fn main() {
 }
 
 fn build_afl(work_dir: &Path, base: Option<&Path>) {
-    let mut environment_variables = HashMap::<String, String>::new();
-
-    if cfg!(feature = "plugins") {
-        let llvm_config = check_llvm_and_get_config();
-        environment_variables.insert("LLVM_CONFIG".to_string(), llvm_config);
-    }
-
-    // skip the checks for the legacy x86 afl-gcc compiler
-    environment_variables.insert("AFL_NO_X86".to_string(), "1".to_string());
-    // build just the runtime to avoid troubles with Xcode clang on macOS
-    //environment_variables.insert("NO_BUILD".to_string(), "1".to_string());
-    environment_variables.insert(
-        "DESTDIR".to_string(),
-        common::afl_dir(base).to_str().unwrap().to_string(),
-    );
-    environment_variables.insert("PREFIX".to_string(), String::new());
-
     // if you had already installed cargo-afl previously you **must** clean AFL++
     let mut command = Command::new("make");
     command
         .current_dir(work_dir)
         .args(["clean", "install"])
-        .envs(&environment_variables)
+        // skip the checks for the legacy x86 afl-gcc compiler
+        .env("AFL_NO_X86", "1")
+        // build just the runtime to avoid troubles with Xcode clang on macOS
+        //.env("NO_BUILD", "1")
+        .env("DESTDIR", common::afl_dir(base))
+        .env("PREFIX", "")
         .env_remove("DEBUG");
+
+    if cfg!(feature = "plugins") {
+        let llvm_config = check_llvm_and_get_config();
+        command.env("LLVM_CONFIG", llvm_config);
+    }
 
     let status = command
         .status()
-        .expect("could not run 'make clean, make install'");
+        .expect("could not run 'make clean install'");
     assert!(status.success());
 }
 
@@ -116,21 +108,29 @@ fn build_afl_llvm_runtime(work_dir: &Path, base: Option<&Path>) {
 }
 
 fn copy_afl_llvm_plugins(work_dir: &Path, base: Option<&Path>) {
-    let shared_libraries = [
-        "afl-llvm-dict2file.so",
-        "afl-llvm-pass.so",
-        "cmplog-instructions-pass.so",
-        "cmplog-routines-pass.so",
-        "cmplog-switches-pass.so",
-        "compare-transform-pass.so",
-        "split-compares-pass.so",
-        "split-switches-pass.so",
-        "SanitizerCoveragePCGUARD.so",
-    ];
+    // Iterate over the files in the directory.
+    if let Ok(entries) = work_dir.read_dir() {
+        for entry in entries.flatten() {
+            let file_name = entry.file_name();
+            let file_name_str = file_name.to_string_lossy();
 
-    for sl in shared_libraries {
-        std::fs::copy(work_dir.join(sl), common::afl_llvm_dir(base).join(sl))
-            .unwrap_or_else(|_| panic!("Couldn't copy shared object file {sl}"));
+            // Get the file extension.
+            if let Some(extension) = file_name_str.split('.').last() {
+                // Only copy the files that are shared objects
+                if extension == "so" {
+                    // Attempt to copy the shared object file.
+                    std::fs::copy(
+                        work_dir.join(&file_name),
+                        common::afl_llvm_dir(base).join(&file_name),
+                    )
+                    .unwrap_or_else(|_| {
+                        panic!("Couldn't copy shared object file {file_name_str}",)
+                    });
+                }
+            }
+        }
+    } else {
+        eprintln!("Failed to read the work directory. Aborting.");
     }
 }
 

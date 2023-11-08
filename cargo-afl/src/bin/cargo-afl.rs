@@ -88,21 +88,15 @@ fn main() {
     }
 }
 
-macro_rules! concat_str {
-    ($s1:expr, $s2:expr) => {
-        concat!($s1, $s2)
-    };
-}
-
 #[allow(clippy::too_many_lines)]
 fn clap_app() -> clap::Command {
     use clap::{value_parser, Arg, Command};
 
-    let help = "In addition to the subcommands above, Cargo subcommands are also \
+    const HELP: &str = "In addition to the subcommands above, Cargo subcommands are also \
                       supported (see `cargo help` for a list of all Cargo subcommands).";
 
-    const VERSION: &'static str = if cfg!(feature = "plugins") {
-        concat_str!(env!("CARGO_PKG_VERSION"), " [feature=plugins]")
+    const VERSION: &str = if cfg!(feature = "plugins") {
+        concat!(env!("CARGO_PKG_VERSION"), " [feature=plugins]")
     } else {
         env!("CARGO_PKG_VERSION")
     };
@@ -119,7 +113,7 @@ fn clap_app() -> clap::Command {
                 .allow_external_subcommands(true)
                 .external_subcommand_value_parser(value_parser!(OsString))
                 .override_usage("cargo afl [SUBCOMMAND or Cargo SUBCOMMAND]")
-                .after_help(help)
+                .after_help(HELP)
                 .subcommand(
                     Command::new("analyze")
                         .about("Invoke afl-analyze")
@@ -320,9 +314,9 @@ where
              -C opt-level=3 \
              -C target-cpu=native "
     );
-    let mut environment_variables = HashMap::<String, String>::new();
-    environment_variables.insert("ASAN_OPTIONS".to_string(), asan_options);
-    environment_variables.insert("TSAN_OPTIONS".to_string(), tsan_options);
+    let mut environment_variables = HashMap::<&str, String>::new();
+    environment_variables.insert("ASAN_OPTIONS", asan_options);
+    environment_variables.insert("TSAN_OPTIONS", tsan_options);
 
     if cfg!(feature = "plugins") {
         // Make sure we are on nightly for the -Z flags
@@ -340,7 +334,7 @@ where
             "
         ));
 
-        environment_variables.insert("AFL_QUIET".to_string(), "1".to_string());
+        environment_variables.insert("AFL_QUIET", "1".to_string());
     } else {
         rustflags.push_str(
             "-C llvm-args=-sanitizer-coverage-level=3 \
@@ -382,8 +376,8 @@ where
     rustflags.push_str(&env::var("RUSTFLAGS").unwrap_or_default());
     rustdocflags.push_str(&env::var("RUSTDOCFLAGS").unwrap_or_default());
 
-    environment_variables.insert("RUSTFLAGS".to_string(), rustflags);
-    environment_variables.insert("RUSTDOCFLAGS".to_string(), rustdocflags);
+    environment_variables.insert("RUSTFLAGS", rustflags);
+    environment_variables.insert("RUSTDOCFLAGS", rustdocflags);
 
     let status = Command::new(cargo_path)
         .arg(subcommand)
