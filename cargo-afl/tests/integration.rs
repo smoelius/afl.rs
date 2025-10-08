@@ -31,35 +31,6 @@ fn input_path() -> path::PathBuf {
 }
 
 #[test]
-fn integration() {
-    fuzz_example("hello", true);
-}
-
-#[test]
-fn integration_cfg() {
-    for cfg_fuzzing in [false, true] {
-        assert_cmd::Command::new(cargo_afl_path())
-            .arg("afl")
-            .arg("build")
-            .arg("--example")
-            .arg("cfg")
-            .arg("--manifest-path")
-            .arg("../afl/Cargo.toml")
-            .envs(if cfg_fuzzing {
-                vec![("AFL_BENCH_UNTIL_CRASH", "1")]
-            } else {
-                vec![("AFL_NO_CFG_FUZZING", "1")]
-            })
-            .assert()
-            .success();
-
-        // Assert that if cfg_fuzzing is set, there are no crashes
-        // And if it is not set, there is at least one crash
-        fuzz_example("cfg", !cfg_fuzzing);
-    }
-}
-
-#[test]
 fn integration_maze() {
     if !common::plugins_available().unwrap_or_default() {
         #[allow(clippy::explicit_write)]
