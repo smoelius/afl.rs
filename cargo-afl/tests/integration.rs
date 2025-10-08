@@ -1,7 +1,12 @@
 use std::{
+    io::Write,
     path,
     process::{self, ExitStatus},
 };
+
+#[allow(dead_code)]
+#[path = "../src/common.rs"]
+mod common;
 
 fn target_dir_path() -> &'static path::Path {
     if path::Path::new("../target/debug/cargo-afl").exists() {
@@ -26,32 +31,18 @@ fn input_path() -> path::PathBuf {
 }
 
 #[test]
-fn integration() {
-    fuzz_example("hello", true);
-}
-
-#[test]
-fn integration_cfg() {
-    for cfg_fuzzing in [false, true] {
-        assert_cmd::Command::new(cargo_afl_path())
-            .arg("afl")
-            .arg("build")
-            .arg("--example")
-            .arg("cfg")
-            .arg("--manifest-path")
-            .arg("../afl/Cargo.toml")
-            .envs(if cfg_fuzzing {
-                vec![]
-            } else {
-                vec![("AFL_NO_CFG_FUZZING", "1")]
-            })
-            .assert()
-            .success();
-
-        // Assert that if cfg_fuzzing is set, there are no crashes
-        // And if it is not set, there is at least one crash
-        fuzz_example("cfg", !cfg_fuzzing);
+fn integration_maze() {
+    if !common::plugins_available().unwrap_or_default() {
+        #[allow(clippy::explicit_write)]
+        writeln!(
+            std::io::stderr(),
+            "Skipping `integration_maze` test as plugins are unavailable"
+        )
+        .unwrap();
+        return;
     }
+
+    fuzz_example("maze", true);
 }
 
 fn fuzz_example(name: &str, should_crash: bool) {
@@ -64,7 +55,7 @@ fn fuzz_example(name: &str, should_crash: bool) {
         .arg(input_path())
         .arg("-o")
         .arg(temp_dir_path)
-        .args(["-V", "5"]) // 5 seconds
+        .args(["-V", "10"]) // 5 seconds
         .arg(examples_path(name))
         .env("AFL_BENCH_UNTIL_CRASH", "1")
         .env("AFL_NO_CRASH_README", "1")

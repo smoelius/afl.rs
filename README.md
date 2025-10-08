@@ -51,3 +51,17 @@ environment variable `AFL_NO_CFG_FUZZING` to `1` when building.
 [american-fuzzy-lop]: http://lcamtuf.coredump.cx/afl/
 [AFLplusplus]: https://aflplus.plus/
 [rust]: https://www.rust-lang.org
+
+## IJON
+
+If you want to use [IJON](https://github.com/AFLplusplus/AFLplusplus/blob/stable/docs/IJON.md) - helping fuzzer coverage through code annotation - then
+have a look at the [maze example](afl/examples/maze.rs).
+
+Note that the IJON macros have been rustyfied to lowercase - hence `IJON_MAX(x)` is `ijon_max(x)` in Rust.
+
+You will need to the following imports from `afl`, in addition to any macros that you use (e.g., `afl::ijon_max`):
+
+```
+use afl::ijon_hashint;
+use afl::ijon_hashstr;
+```
